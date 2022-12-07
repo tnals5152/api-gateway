@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -48,8 +49,8 @@ func logging(err error) {
 
 	if ok1 || ok2 {
 		logger.Printf("[%s][%s](%d line)/[%s][%s](%d line) - %s",
-			file2, funcName2Split[len(funcName2Split)-1], line2,
-			file1, funcName1Split[len(funcName1Split)-1], line1,
+			filepath.Base(file2), funcName2Split[len(funcName2Split)-1], line2,
+			filepath.Base(file1), funcName1Split[len(funcName1Split)-1], line1,
 			err.Error())
 	}
 }
