@@ -2,19 +2,22 @@ package db
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	ct "tnals5152.com/api-gateway/const"
+	"tnals5152.com/api-gateway/utils"
 )
 
+type MongoStruct struct {
+	client *mongo.Client
+	DB     *mongo.Database
+}
+
+var Mongo = &MongoStruct{}
+
 func ConnectDB() {
-	// ctx, cancel := context.WithTimeout(
-	// 	context.Background(),
-	// 	viper.GetDuration(ct.DBTimeout) * time.Second)
-	// defer cancel()
 
 	credentail := options.Credential{
 		Username: viper.GetString(ct.DBUsername),
@@ -28,7 +31,13 @@ func ConnectDB() {
 			viper.GetString(ct.DBPort),
 	).SetAuth(credentail)
 
-	client, err := mongo.Connect(context.TODO(), clientOptions)
+	client, err := mongo.Connect(context.Background(), clientOptions)
 
-	fmt.Println(client, err)
+	Mongo.client = client
+
+	if err != nil {
+		utils.Panic(err)
+	}
+
+	Mongo.DB = Mongo.client.Database(viper.GetString(ct.DBDatabase))
 }
