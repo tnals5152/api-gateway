@@ -9,9 +9,16 @@ const (
 	DBHost     = "mongodb.hostname"
 	DBDatabase = "mongodb.database"
 	DBTimeout  = "mongodb.timeout"
+
+	ServerAppName      = "server.app_name"
+	ServerPort         = "server.port"
+	ServerReadTimeout  = "server.read_timeout"
+	ServerWriteTimeout = "server.write_timeout"
 )
 
 // 기본 타임아웃 세팅
 var ContextTimeoutMap map[string]time.Duration = map[string]time.Duration{
-	DBTimeout: 10,
+	DBTimeout:          10,
+	ServerReadTimeout:  10,
+	ServerWriteTimeout: 10,
 }
