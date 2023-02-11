@@ -14,6 +14,27 @@ const (
 	ServerPort         = "server.port"
 	ServerReadTimeout  = "server.read_timeout"
 	ServerWriteTimeout = "server.write_timeout"
+
+	PATH_COLLECTION     = "path"
+	ENDPOINT_COLLECTION = "endpoint"
+
+	GatewayGrpcPort = "gateway.grpc.port"
+
+	GrpcTimeout = "grpc.timeout"
+
+	Host = "host"
+
+	PLUS  = "+"
+	SLASH = "/"
+
+	Path        = "path"
+	IsParam     = "is_param"
+	RequestPath = "request_path"
+	SubPath     = "sub_path"
+
+	AND    = "$and"
+	OR     = "$or"
+	EXISTS = "$exists"
 )
 
 // 기본 타임아웃 세팅
