@@ -15,22 +15,26 @@ const (
 	ServerReadTimeout  = "server.read_timeout"
 	ServerWriteTimeout = "server.write_timeout"
 
-	PATH_COLLECTION     = "path"
-	ENDPOINT_COLLECTION = "endpoint"
+	PATH_COLLECTION    = "path"
+	APPROVE_COLLECTION = "approve"
 
 	GatewayGrpcPort = "gateway.grpc.port"
 
 	GrpcTimeout = "grpc.timeout"
+
+	GRPC = "GRPC"
 
 	Host = "host"
 
 	PLUS  = "+"
 	SLASH = "/"
 
-	Path        = "path"
-	IsParam     = "is_param"
-	RequestPath = "request_path"
-	SubPath     = "sub_path"
+	Path          = "path"
+	IsParam       = "is_param"
+	RequestPath   = "request_path"
+	SubPath       = "sub_path"
+	RequestMethod = "request_method"
+	IP            = "ip"
 
 	AND    = "$and"
 	OR     = "$or"

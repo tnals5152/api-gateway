@@ -2,32 +2,24 @@ package handler
 
 import (
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	constant "tnals5152.com/api-gateway/const"
-	"tnals5152.com/api-gateway/db/query"
-	"tnals5152.com/api-gateway/model"
 	"tnals5152.com/api-gateway/utils"
 )
 
-func GetEndpointPath(params []string) {
-	// 1. filter를 request_path에 맞게 세팅
-	filter := SetRequestPathFilter(params)
-	var result *model.Resource
-
-	collection, err := query.GetCollection("soominTest")
-
-	if err != nil {
-		return
-	}
-
-	err = collection.SetResult(&result).SetFilter(filter).GetOne()
-
-	return
-}
-
 // request_path에 맞게 쿼리 세팅
-func SetRequestPathFilter(params []string) any {
+func SetRequestPathFilterAndSort(params []string, requestMethod string) (filter any, sort any) {
+	sortOption := bson.D{}
 	filterValue := bson.A{}
 	key := constant.RequestPath
+
+	filterValue = append(filterValue, bson.D{
+		{
+			Key:   constant.RequestMethod,
+			Value: requestMethod,
+		},
+	})
 
 	for _, param := range params {
 		filterValue = append(filterValue,
@@ -58,6 +50,17 @@ func SetRequestPathFilter(params []string) any {
 			},
 		)
 
+		// is_param이 false인 데이터 먼저 반환
+		sortOption = append(sortOption,
+			primitive.E{
+				Key: utils.JoinWithDot(
+					key,
+					constant.IsParam,
+				),
+				Value: 1,
+			},
+		)
+
 		key = utils.JoinWithDot(key, constant.SubPath)
 	}
 
@@ -76,10 +79,12 @@ func SetRequestPathFilter(params []string) any {
 		},
 	)
 
-	filter := bson.D{{
+	filter = bson.D{{
 		Key:   constant.AND,
 		Value: filterValue,
 	}}
 
-	return filter
+	sort = options.Find().SetSort(sortOption)
+
+	return
 }
