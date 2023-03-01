@@ -9,7 +9,9 @@ import (
 )
 
 // request_path에 맞게 쿼리 세팅
-func SetRequestPathFilterAndSort(params []string, requestMethod string) (filter any, sort any) {
+func SetRequestPathFilterAndSort(params []string, requestMethod string, header map[string]string) (
+	filter any, sort any) {
+
 	sortOption := bson.D{}
 	filterValue := bson.A{}
 	key := constant.RequestPath
@@ -78,6 +80,23 @@ func SetRequestPathFilterAndSort(params []string, requestMethod string) (filter 
 			},
 		},
 	)
+
+	for key := range header {
+		filterValue = append(filterValue,
+			bson.D{
+				{
+					Key: key,
+					Value: bson.D{
+						{
+							Key:   constant.EXISTS,
+							Value: true,
+						},
+					},
+				},
+			},
+		)
+
+	}
 
 	filter = bson.D{{
 		Key:   constant.AND,
