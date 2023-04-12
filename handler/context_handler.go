@@ -237,6 +237,62 @@ func (c *ContextHandler) Call() (err error) {
 	return
 }
 
+func (c *ContextHandler) CallGrpc() (err error) {
+	// 0. err에 wrap을 사용하여 에러가 발생한 위치를 저장
+	defer c.DeferWrap(&c.err)
+
+	conn, cancel, err := grpc.ConnectGrpcClient(c.resource.Host.Host, c.resource.Host.Port)
+
+	if err != nil {
+		return
+	}
+
+	defer cancel()
+
+	client := client_grpc.NewGprcInitClient(conn)
+	ctx, cancel := utils.GetContext(viper.GetString(constant.GrpcTimeout))
+	defer cancel()
+
+	response, err := client.Connector(ctx, &client_grpc.HttpRequest{
+		Method: c.c.Method(),
+		Headers: func() []*client_grpc.Header {
+
+			var headers []*client_grpc.Header
+
+			for mapKey, mapValue := range c.header {
+				headers = append(headers, &client_grpc.Header{
+					Key:   mapKey,
+					Value: mapValue,
+				})
+			}
+
+			return headers
+		}(),
+		Params: c.requestParams,
+		Queries: func() []*client_grpc.Query {
+
+			var queries []*client_grpc.Query
+
+			for mapKey, mapValue := range c.queryString {
+				queries = append(queries, &client_grpc.Query{
+					Key:   mapKey,
+					Value: mapValue,
+				})
+			}
+			return queries
+		}(),
+		Body: c.c.Body(),
+	})
+
+	if err != nil {
+		return
+	}
+
+	fmt.Println(response.String())
+	return
+
+}
+
 func (c *ContextHandler) DeferWrap(err *error) {
 	if c.err != nil {
 		return
