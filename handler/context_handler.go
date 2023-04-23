@@ -2,13 +2,19 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
+	"github.com/carlmjohnson/requests"
 	"github.com/gofiber/fiber/v2"
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson"
 	constant "tnals5152.com/api-gateway/const"
 	"tnals5152.com/api-gateway/db/query"
+	grpc "tnals5152.com/api-gateway/grpc"
+	client_grpc "tnals5152.com/api-gateway/grpc/client"
 	"tnals5152.com/api-gateway/model"
+	"tnals5152.com/api-gateway/utils"
 	util_error "tnals5152.com/api-gateway/utils/error"
 )
 
@@ -20,6 +26,8 @@ type ContextHandler struct {
 
 	queryString map[string][]string
 	header      map[string][]string
+	body        map[string]any
+	Response    any
 }
 
 func (c *ContextHandler) SetCtx(ctx *fiber.Ctx) *ContextHandler {
@@ -34,8 +42,8 @@ func (c *ContextHandler) SetReqeustParams(params []string) *ContextHandler {
 	return c
 }
 
-// TODO: params 지우기
-func (c *ContextHandler) GetCorrectResource(params []string) (contextHandler *ContextHandler) {
+// 일치하는 resource DB에서 조회
+func (c *ContextHandler) GetCorrectResource() (contextHandler *ContextHandler) {
 	var err error
 	contextHandler = c
 
@@ -47,7 +55,7 @@ func (c *ContextHandler) GetCorrectResource(params []string) (contextHandler *Co
 	defer c.DeferWrap(&err)
 
 	// 1. filter를 request_path에 맞게 세팅
-	filter, sort := SetRequestPathFilterAndSort(params, c.c.Method())
+	filter, sort := SetRequestPathFilterAndSort(c.requestParams, c.c.Method(), c.c.GetReqHeaders())
 	var resources []*model.Resource
 
 	collection, err := query.GetCollection(constant.PATH_COLLECTION)
@@ -104,6 +112,14 @@ func (c *ContextHandler) getCorrectResource(resources []*model.Resource) (correc
 			continue
 		}
 
+		// 3-4. 필수 body key가 존재하는지 체크, 없으면 다음 resource로 넘어감
+		if check, bodyErr := c.CheckBody(resource.Body); bodyErr != nil {
+			err = bodyErr
+			return
+		} else if !check {
+			continue
+		}
+
 		var exists bool
 		// 3-4. isPrivate 체크(해당 resource가 isPrivate 일 시, approve collection에 저장된 host에서만 호출 가능)
 		if exists, err = c.CheckIsPrivate(resource.IsPrivate); err != nil {
@@ -123,24 +139,39 @@ func (c *ContextHandler) getCorrectResource(resources []*model.Resource) (correc
 
 // queryString에서 넘어온 데이터와 c에 있는 데이터가 일치하는지 확인
 func (c *ContextHandler) CheckQueryString(queryString model.StringMap) bool {
+
+	var queryMap map[string][]string = make(map[string][]string)
+
+	c.c.Context().QueryArgs().VisitAll(func(key, value []byte) {
+		queryMap[string(key)] = append(queryMap[string(key)], string(value))
+	})
+
 	for key := range queryString {
 		// queryArgs에 key가 있는지 체크
 		// c.c.QueryArgs().PeekMulti(key)로 멀티 값 추출 가능
-		if !c.c.Context().QueryArgs().Has(key) {
+		if _, ok := queryMap[key]; !ok {
 			return false
 		}
 	}
+
 	return true
 }
 
 // header에서 넘어온 데이터와 c에 있는 데이터가 일치하는지 확인
 func (c *ContextHandler) CheckHeader(header model.StringMap) bool {
-	headerMap := c.c.GetReqHeaders()
+	var headerMap map[string][]string = make(map[string][]string)
+
+	c.c.Request().Header.VisitAll(func(key, value []byte) {
+		headerMap[string(key)] = append(headerMap[string(key)], string(value))
+	})
+
 	for key := range header {
 		if _, ok := headerMap[key]; !ok {
 			return false
 		}
 	}
+
+	c.header = headerMap
 
 	return true
 }
@@ -176,6 +207,36 @@ func (c *ContextHandler) CheckFormData(formData *model.FormData) bool {
 	return true
 }
 
+// body에서 넘어온 key가 일치하는지 확인
+func (c *ContextHandler) CheckBody(bodyString model.StringMap) (check bool, err error) {
+
+	if len(bodyString) == 0 {
+		return true, nil
+	}
+	c.body = map[string]any{}
+
+	// 0. err에 wrap을 사용하여 에러가 발생한 위치를 저장
+	defer c.DeferWrap(&err)
+	// api로 넘어온 body
+	var body map[string]string
+	err = c.c.BodyParser(&body)
+
+	if err != nil {
+		return
+	}
+
+	// db에 저장된 body
+	for key, value := range bodyString {
+		if bodyValue, ok := body[key]; !ok {
+			return false, errors.New(key + "가 body에 존재하지 않습니다.")
+		} else {
+			c.body[value] = bodyValue
+		}
+	}
+
+	return true, nil
+}
+
 func (c *ContextHandler) CheckIsPrivate(isPrivate bool) (isOk bool, err error) {
 	// 0. err에 wrap을 사용하여 에러가 발생한 위치를 저장
 	defer c.DeferWrap(&err)
@@ -209,35 +270,45 @@ func (c *ContextHandler) CheckIsPrivate(isPrivate bool) (isOk bool, err error) {
 }
 
 // 일치하는 resource를 찾은 경우 해당 api 혹은 gRPC를 호출하는 함수
-func (c *ContextHandler) Call() (err error) {
+// header, query, params 는 체크 완료
+// 여기선
+func (c *ContextHandler) Call() (response any, err error) {
 	if c.err != nil {
 		return
 	}
+	response = &c.Response
 	// 0. err에 wrap을 사용하여 에러가 발생한 위치를 저장
 	defer c.DeferWrap(&c.err)
 
-	// grpc면 grpc 호출
-	if strings.ToUpper(c.resource.Method) == constant.GRPC {
+	// 1. form_data가 있을 시 validate 체크
 
+	// 2. grpc면 grpc 호출
+	if strings.ToUpper(c.resource.Method) == constant.GRPC {
+		response, err = c.CallGrpc()
+		return
 	}
 
-	// TODO: carlmjohnson 사용할 예정(header value를 []string으로 세팅할 수 있음)
-	// // TODO: timeout setting하기
-	// client := &http.Client{}
+	// 3. http 호출
+	request := requests.
+		URL(c.resource.Host.GetUrl()).
+		ToHeaders(c.header).
+		BodyJSON(c.body).
+		Method(c.resource.Method).
+		Path("/" + strings.Join(c.requestParams, "/"))
 
-	// // TODO: c.c.Request().Body() -> io.Reader
-	// req, err := http.NewRequest(c.resource.Method, c.resource.Host.Host+":"+c.resource.Host.Port+"/"+c.resource.Path, nil)
+	for key, value := range c.queryString {
+		request.Param(key, value...)
+	}
 
-	// if err != nil {
-	// 	return
-	// }
+	ctx, cancel := utils.GetContext(viper.GetString(constant.HttpTimeout))
+	defer cancel()
 
-	// req.Header.Add()
+	err = request.ToJSON(&c.Response).Fetch(ctx)
 
 	return
 }
 
-func (c *ContextHandler) CallGrpc() (err error) {
+func (c *ContextHandler) CallGrpc() (response any, err error) {
 	// 0. err에 wrap을 사용하여 에러가 발생한 위치를 저장
 	defer c.DeferWrap(&c.err)
 
@@ -253,7 +324,7 @@ func (c *ContextHandler) CallGrpc() (err error) {
 	ctx, cancel := utils.GetContext(viper.GetString(constant.GrpcTimeout))
 	defer cancel()
 
-	response, err := client.Connector(ctx, &client_grpc.HttpRequest{
+	grpcResponse, err := client.Connector(ctx, &client_grpc.HttpRequest{
 		Method: c.c.Method(),
 		Headers: func() []*client_grpc.Header {
 
@@ -288,7 +359,9 @@ func (c *ContextHandler) CallGrpc() (err error) {
 		return
 	}
 
-	fmt.Println(response.String())
+	c.Response = grpcResponse
+	response = grpcResponse
+	fmt.Println(grpcResponse.String())
 	return
 
 }
