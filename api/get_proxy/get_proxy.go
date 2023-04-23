@@ -13,17 +13,18 @@ func GetProxy(c *fiber.Ctx) error {
 	params := c.Params(constant.PLUS)
 	pathParams := strings.Split(params, constant.SLASH)
 	// 2. request api의 path로 DB에서 일치하는 endpoint_path를 찾는다.
-	new(handler.ContextHandler).
+	respnse, err := new(handler.ContextHandler).
 		SetCtx(c).
 		SetReqeustParams(pathParams).
-		GetCorrectResource(pathParams).Call()
+		GetCorrectResource().
+		Call()
 
-	// if err != nil {
-	// 	// TODO: response Model 정의하기
-	// 	return c.JSON(err)
-	// }
+	if err != nil {
+		// TODO: response Model 정의하기
+		return c.JSON(map[string]any{
+			"error": err.Error(),
+		})
+	}
 
-	// contextHandler.Call()
-
-	return nil
+	return c.JSON(respnse)
 }
