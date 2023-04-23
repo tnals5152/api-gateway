@@ -1,11 +1,13 @@
 package model
 
+import "errors"
+
 type StringMap map[string]string
 
 // Path의 {{}}의 개수와 EndpointPath의 {{}}개수가 같아야 한다.(grpc일 때 제외)
 // grpc일 때는 Path의 param을 배열로 전달한다.
 type Resource struct {
-	ID            string    `json:"id" bson:"_id"`
+	ID            string    `json:"id" bson:"_id,omitempty"`
 	RequestPath   *Path     `json:"request_path" bson:"request_path,omitempty"`
 	RequestMethod string    `json:"request_method" bson:"request_method"`
 	Host          *Host     `json:"host" bson:"host,omitempty"`
@@ -15,13 +17,14 @@ type Resource struct {
 	Header        StringMap `json:"header" bson:"header,omitempty"`
 	FormData      *FormData `json:"form_data" bson:"form_data,omitempty"`
 	Body          StringMap `json:"body" bson:"body,omitempty"`
-	IsPrivate     bool      `json:"is_private" bson:"is_private,omitempty"`
-	Path          string    `json:"path" bson:"path,omitempty"`
+	IsPrivate     bool      `json:"is_private" bson:"is_private"`
+	CorsCheckApi  bool      `json:"cors_check_api" bson:"cors_check_api"`
+	Path          string    `json:"path" bson:"path"`
 }
 
 type Path struct {
-	Path    string `json:"path" bson:"path,omitempty"`
-	IsParam bool   `json:"is_param" bson:"is_param,omitempty"`
+	Path    string `json:"path" bson:"path"`
+	IsParam bool   `json:"is_param" bson:"is_param"`
 	SubPath *Path  `json:"sub_path" bson:"sub_path,omitempty"`
 }
 
@@ -34,6 +37,35 @@ type Host struct {
 type FormData struct {
 	Value StringMap `json:"value" bson:"value,omitempty"`
 	File  StringMap `json:"file" bson:"file,omitempty"`
+}
+
+func (resource *Resource) Validate() (err error) {
+	if resource.RequestPath == nil {
+		err = errors.New("request path is required")
+		return
+	}
+	if resource.RequestMethod == "" {
+		err = errors.New("request method is required")
+		return
+	}
+	if resource.Host == nil {
+		err = errors.New("host is required")
+		return
+	}
+	if resource.Method == "" {
+		err = errors.New("method is required")
+		return
+	}
+	if resource.FunctionName == "" {
+		err = errors.New("function_name is required")
+		return
+	}
+	if resource.Path == "" {
+		err = errors.New("path is required")
+		return
+	}
+
+	return
 }
 
 func (h *Host) GetUrl() string {
