@@ -44,11 +44,12 @@ func SetRequestPathFilterAndSort(params []string, requestMethod string, header m
 	// 마지막엔 sub_path가 존재하지 않아야 함 -> 안 그러면 앞에만 일치하는 값도 나옴
 	filterValue = append(filterValue, query.Exists(key, false))
 
-	for key := range header {
+	// TODO: 필수 header가 아닌 경우도 있을 수 있으니 체크 보류
+	// for key := range header {
 
-		filterValue = append(filterValue, query.Exists(key, true))
+	// 	filterValue = append(filterValue, query.Exists(key, true))
 
-	}
+	// }
 
 	filter = query.And(filterValue...)
 
