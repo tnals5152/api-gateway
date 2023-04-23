@@ -47,6 +47,8 @@ func SetHost(host *model.Host) (id string, err error) {
 
 // proxy document add
 func SetProxy(resource *model.Resource) (err error) {
+	ctx, cancel := utils.GetContext(constant.DBTimeout)
+	defer cancel()
 
 	collection, err := GetCollection(constant.PATH_COLLECTION)
 
@@ -54,7 +56,7 @@ func SetProxy(resource *model.Resource) (err error) {
 		return
 	}
 
-	err = collection.SetOne(resource)
+	_, err = collection.Collection.InsertOne(ctx, resource)
 
 	return
 }
