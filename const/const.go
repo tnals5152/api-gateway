@@ -22,6 +22,8 @@ const (
 
 	GrpcTimeout = "grpc.timeout"
 
+	HttpTimeout = "http.timeout"
+
 	GRPC = "GRPC"
 
 	Host = "host"
@@ -36,9 +38,11 @@ const (
 	RequestMethod = "request_method"
 	IP            = "ip"
 
-	AND    = "$and"
-	OR     = "$or"
-	EXISTS = "$exists"
+	AND       = "$and"
+	OR        = "$or"
+	NOT       = "$not"
+	EXISTS    = "$exists"
+	ELEMMATCH = "$elemMatch"
 )
 
 // 기본 타임아웃 세팅
