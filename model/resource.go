@@ -14,6 +14,7 @@ type Resource struct {
 	QueryString   StringMap `json:"query_string" bson:"query_string,omitempty"`
 	Header        StringMap `json:"header" bson:"header,omitempty"`
 	FormData      *FormData `json:"form_data" bson:"form_data,omitempty"`
+	Body          StringMap `json:"body" bson:"body,omitempty"`
 	IsPrivate     bool      `json:"is_private" bson:"is_private,omitempty"`
 	Path          string    `json:"path" bson:"path,omitempty"`
 }
@@ -33,4 +34,8 @@ type Host struct {
 type FormData struct {
 	Value StringMap `json:"value" bson:"value,omitempty"`
 	File  StringMap `json:"file" bson:"file,omitempty"`
+}
+
+func (h *Host) GetUrl() string {
+	return h.Host + ":" + h.Port
 }
