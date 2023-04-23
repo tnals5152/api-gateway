@@ -93,6 +93,11 @@ func (c *ContextHandler) GetCorrectResource() (contextHandler *ContextHandler) {
 }
 
 func (c *ContextHandler) getCorrectResource(resources []*model.Resource) (correctResource *model.Resource, err error) {
+	if c.err != nil {
+		err = c.err
+		return
+	}
+
 	// 0. err에 wrap을 사용하여 에러가 발생한 위치를 저장
 	defer c.DeferWrap(&err)
 
@@ -274,6 +279,7 @@ func (c *ContextHandler) CheckIsPrivate(isPrivate bool) (isOk bool, err error) {
 // 여기선
 func (c *ContextHandler) Call() (response any, err error) {
 	if c.err != nil {
+		err = c.err
 		return
 	}
 	response = &c.Response
