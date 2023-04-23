@@ -25,12 +25,13 @@ func SetRequestPathFilterAndSort(params []string, requestMethod string, header m
 					param,
 				),
 				query.AddFilter(
-					utils.JoinWithDot(key, constant.Path),
+					utils.JoinWithDot(key, constant.IsParam),
 					true,
 				),
 			),
 		)
 
+		// boolean type은 1이면 false를 먼저 반환한다.
 		sortOption = append(sortOption,
 			query.AddOption(
 				utils.JoinWithDot(key, constant.IsParam),
