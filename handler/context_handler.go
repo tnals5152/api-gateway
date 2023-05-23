@@ -52,7 +52,7 @@ func (c *ContextHandler) GetCorrectResource() (contextHandler *ContextHandler) {
 	}
 
 	// 0. err에 wrap을 사용하여 에러가 발생한 위치를 저장
-	defer c.DeferWrap(&err)
+	defer c.DeferWrap(err)
 
 	// 1. filter를 request_path에 맞게 세팅
 	filter, sort := SetRequestPathFilterAndSort(c.requestParams, c.c.Method(), c.c.GetReqHeaders())
@@ -99,7 +99,7 @@ func (c *ContextHandler) getCorrectResource(resources []*model.Resource) (correc
 	}
 
 	// 0. err에 wrap을 사용하여 에러가 발생한 위치를 저장
-	defer c.DeferWrap(&err)
+	defer c.DeferWrap(err)
 
 	for _, resource := range resources {
 		// 3-1. 필수 querString이 존재하는지 체크, 없으면 다음 resource로 넘어감
@@ -221,7 +221,7 @@ func (c *ContextHandler) CheckBody(bodyString model.StringMap) (check bool, err 
 	c.body = map[string]any{}
 
 	// 0. err에 wrap을 사용하여 에러가 발생한 위치를 저장
-	defer c.DeferWrap(&err)
+	defer c.DeferWrap(err)
 	// api로 넘어온 body
 	var body map[string]string
 	err = c.c.BodyParser(&body)
@@ -244,7 +244,7 @@ func (c *ContextHandler) CheckBody(bodyString model.StringMap) (check bool, err 
 
 func (c *ContextHandler) CheckIsPrivate(isPrivate bool) (isOk bool, err error) {
 	// 0. err에 wrap을 사용하여 에러가 발생한 위치를 저장
-	defer c.DeferWrap(&err)
+	defer c.DeferWrap(err)
 
 	// private api가 아니면 사용 가능
 	if !isPrivate {
@@ -284,7 +284,7 @@ func (c *ContextHandler) Call() (response any, err error) {
 	}
 	response = &c.Response
 	// 0. err에 wrap을 사용하여 에러가 발생한 위치를 저장
-	defer c.DeferWrap(&c.err)
+	defer c.DeferWrap(c.err)
 
 	// 1. form_data가 있을 시 validate 체크
 
@@ -300,7 +300,7 @@ func (c *ContextHandler) Call() (response any, err error) {
 		ToHeaders(c.header).
 		BodyJSON(c.body).
 		Method(c.resource.Method).
-		Path("/" + strings.Join(c.requestParams, "/"))
+		Path("/" + c.resource.Path)
 
 	for key, value := range c.queryString {
 		request.Param(key, value...)
@@ -316,7 +316,7 @@ func (c *ContextHandler) Call() (response any, err error) {
 
 func (c *ContextHandler) CallGrpc() (response any, err error) {
 	// 0. err에 wrap을 사용하여 에러가 발생한 위치를 저장
-	defer c.DeferWrap(&c.err)
+	defer c.DeferWrap(c.err)
 
 	conn, cancel, err := grpc.ConnectGrpcClient(c.resource.Host.Host, c.resource.Host.Port)
 
@@ -372,11 +372,11 @@ func (c *ContextHandler) CallGrpc() (response any, err error) {
 
 }
 
-func (c *ContextHandler) DeferWrap(err *error) {
+func (c *ContextHandler) DeferWrap(err error) {
 	if c.err != nil {
 		return
 	}
 	util_error.DeferWrap(err, 1)
 
-	c.err = *err
+	c.err = err
 }

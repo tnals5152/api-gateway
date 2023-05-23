@@ -135,7 +135,7 @@ func (c *Collection) Exists() (exists bool, err error) {
 }
 
 func (c *Collection) GetOne() (err error) {
-	defer util_error.DeferWrap(&err)
+	defer util_error.DeferWrap(err)
 	ctx, cancel := utils.GetContext(constant.DBTimeout)
 	defer cancel()
 	singleResult := c.Collection.FindOne(

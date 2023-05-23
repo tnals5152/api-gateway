@@ -56,15 +56,15 @@ func (e *PathError) AddCallerInfo(callerInfo *CallerInfo) *PathError {
 	return e
 }
 
-func wrapError(err *error, depth int) {
+func wrapError(err error, depth int) {
 
-	pathError, ok := (*err).(*PathError)
+	pathError, ok := (err).(*PathError)
 
 	if !ok {
-		pathError = new(PathError).SetError(*err)
+		pathError = new(PathError).SetError(err)
 	}
 
-	*err = pathError
+	err = pathError
 
 	pc, file, line, ok := runtime.Caller(depth)
 
@@ -85,8 +85,8 @@ func wrapError(err *error, depth int) {
 }
 
 // error line 및 에러의 위치를 알고 싶은 함수의 맨 위에 defer DeferWrap(&err)로 작성하면 된다.
-func DeferWrap(err *error, depths ...int) {
-	if err == nil || *err == nil {
+func DeferWrap(err error, depths ...int) {
+	if err == nil {
 		return
 	}
 
