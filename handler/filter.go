@@ -5,6 +5,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	constant "tnals5152.com/api-gateway/const"
 	"tnals5152.com/api-gateway/db/query"
+	"tnals5152.com/api-gateway/model"
 	"tnals5152.com/api-gateway/utils"
 )
 
@@ -55,6 +56,31 @@ func SetRequestPathFilterAndSort(params []string, requestMethod string, header m
 	filter = query.And(filterValue...)
 
 	sort = options.Find().SetSort(sortOption)
+
+	return
+}
+
+// host 가 같아야 하며, method가 같아야 하고, path가 같을 때 체크하는 filter 반환
+func CheckDuplicateHostFilter(resource *model.Resource) (filter any) {
+
+	filter = query.And(
+		query.AddFilter("path", resource.Path),
+		query.AddFilter("method", resource.Method),
+		query.AddFilter("host", resource.Host),
+	)
+
+	return
+}
+
+// (request_path && request_method) || function_name 이 같을 때 체크하는 filter 반환
+func CheckDuplicateRequestFilter(resource *model.Resource) (filter any) {
+	filter = query.Or(
+		query.AddFilter("function_name", resource.FunctionName),
+		query.And(
+			query.AddFilter("request_path", resource.RequestPath),
+			query.AddFilter("request_method", resource.RequestMethod),
+		),
+	)
 
 	return
 }

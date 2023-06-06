@@ -1,7 +1,5 @@
 package model
 
-import "errors"
-
 type StringMap map[string]string
 
 // Path의 {{}}의 개수와 EndpointPath의 {{}}개수가 같아야 한다.(grpc일 때 제외)
@@ -37,35 +35,6 @@ type Host struct {
 type FormData struct {
 	Value StringMap `json:"value" bson:"value,omitempty"`
 	File  StringMap `json:"file" bson:"file,omitempty"`
-}
-
-func (resource *Resource) Validate() (err error) {
-	if resource.RequestPath == nil {
-		err = errors.New("request path is required")
-		return
-	}
-	if resource.RequestMethod == "" {
-		err = errors.New("request method is required")
-		return
-	}
-	if resource.Host == nil {
-		err = errors.New("host is required")
-		return
-	}
-	if resource.Method == "" {
-		err = errors.New("method is required")
-		return
-	}
-	if resource.FunctionName == "" {
-		err = errors.New("function_name is required")
-		return
-	}
-	if resource.Path == "" {
-		err = errors.New("path is required")
-		return
-	}
-
-	return
 }
 
 func (h *Host) GetUrl() string {

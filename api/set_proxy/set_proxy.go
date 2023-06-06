@@ -9,7 +9,8 @@ import (
 
 func CreateProxy(c *fiber.Ctx) error {
 
-	var resource *model.Resource
+	// model.RequestResource 형식으로 들어오도록 변경 예정
+	var resource *model.RequestResource
 
 	if err := c.BodyParser(&resource); err != nil {
 		return c.JSON(err.Error())

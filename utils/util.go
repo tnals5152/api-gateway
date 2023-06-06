@@ -12,6 +12,7 @@ import (
 var RePathParam *regexp.Regexp
 
 func init() {
+	// .* 대신 일정한 규칙을 만들면 해당 규칙을 넣어주길
 	re, err := regexp.Compile(`{{.*}}`) // main/{{num}}/post
 
 	if err != nil {
