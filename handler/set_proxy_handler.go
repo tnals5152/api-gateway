@@ -11,7 +11,7 @@ import (
 
 func SetProxyData(requestResource *model.RequestResource) (err error) {
 	// 0. err에 wrap을 사용하여 에러가 발생한 위치를 저장
-	defer util_error.DeferWrap(err, 1)
+	defer util_error.DeferWrap(&err, 1)
 
 	// requestResource to resource
 	resource, err := requestResource.ToResource()

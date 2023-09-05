@@ -60,6 +60,13 @@ func SetRequestPathFilterAndSort(params []string, requestMethod string, header m
 	return
 }
 
+func SetFunctionNameFilter(functionName string) (filter any) {
+
+	filter = query.AddFilter("function_name", functionName)
+
+	return
+}
+
 // host 가 같아야 하며, method가 같아야 하고, path가 같을 때 체크하는 filter 반환
 func CheckDuplicateHostFilter(resource *model.Resource) (filter any) {
 

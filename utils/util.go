@@ -13,7 +13,7 @@ var RePathParam *regexp.Regexp
 
 func init() {
 	// .* 대신 일정한 규칙을 만들면 해당 규칙을 넣어주길
-	re, err := regexp.Compile(`{{.*}}`) // main/{{num}}/post
+	re, err := regexp.Compile(`{{(.*)}}`) // main/{{num}}/post
 
 	if err != nil {
 		panic(err)
@@ -39,6 +39,10 @@ func GetObjectId(objectId any) (oid string) {
 
 func JoinWithDot(str ...string) string {
 	return strings.Join(str, ".")
+}
+
+func Join(str ...string) string {
+	return strings.Join(str, "")
 }
 
 func IsNil(i interface{}) bool {

@@ -56,37 +56,40 @@ func (e *PathError) AddCallerInfo(callerInfo *CallerInfo) *PathError {
 	return e
 }
 
-func wrapError(err error, depth int) {
+func wrapError(err *error, depth int) {
 
-	pathError, ok := (err).(*PathError)
-
-	if !ok {
-		pathError = new(PathError).SetError(err)
-	}
-
-	err = pathError
-
-	pc, file, line, ok := runtime.Caller(depth)
+	pathError, ok := (*err).(*PathError)
 
 	if !ok {
-		return
+		pathError = new(PathError).SetError(*err)
 	}
 
-	pcSlice := strings.Split(runtime.FuncForPC(pc).Name(), constant.SLASH)
-	fileSlice := strings.Split(file, constant.SLASH)
+	*err = pathError
 
-	pathError.AddCallerInfo(
-		new(CallerInfo).
-			SetFunctionName(pcSlice[len(pcSlice)-1]).
-			SetFileName(fileSlice[len(fileSlice)-1]).
-			SetLine(line),
-	)
+	for i := depth; i < 10; i++ {
+		pc, file, line, ok := runtime.Caller(i)
+
+		if !ok {
+			continue
+		}
+
+		pcSlice := strings.Split(runtime.FuncForPC(pc).Name(), constant.SLASH)
+		fileSlice := strings.Split(file, constant.SLASH)
+
+		pathError.AddCallerInfo(
+			new(CallerInfo).
+				SetFunctionName(pcSlice[len(pcSlice)-1]).
+				SetFileName(fileSlice[len(fileSlice)-1]).
+				SetLine(line),
+		)
+
+	}
 
 }
 
 // error line 및 에러의 위치를 알고 싶은 함수의 맨 위에 defer DeferWrap(&err)로 작성하면 된다.
-func DeferWrap(err error, depths ...int) {
-	if err == nil {
+func DeferWrap(err *error, depths ...int) {
+	if err == nil || *err == nil {
 		return
 	}
 

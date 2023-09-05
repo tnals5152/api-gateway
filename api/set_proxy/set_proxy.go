@@ -2,7 +2,6 @@ package setproxy
 
 import (
 	"github.com/gofiber/fiber/v2"
-	host_pkg "tnals5152.com/api-gateway/db/query"
 	"tnals5152.com/api-gateway/handler"
 	"tnals5152.com/api-gateway/model"
 )
