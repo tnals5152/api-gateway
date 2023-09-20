@@ -1,6 +1,8 @@
 package query
 
 import (
+	"errors"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	constant "tnals5152.com/api-gateway/const"
@@ -105,6 +107,7 @@ func (c *Collection) GetAll() (err error) {
 }
 
 func (c *Collection) Exists() (exists bool, err error) {
+	defer util_error.DeferWrap(&err)
 	ctx, cancel := utils.GetContext(constant.DBTimeout)
 	defer cancel()
 
@@ -123,6 +126,7 @@ func (c *Collection) Exists() (exists bool, err error) {
 		c.filter,
 		countOptions...,
 	)
+	err = errors.New("??")
 
 	if err != nil {
 		return

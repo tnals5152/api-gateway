@@ -24,6 +24,8 @@ const (
 
 	HttpTimeout = "http.timeout"
 
+	SENTRY_DSN = "sentry.dsn"
+
 	GRPC = "GRPC"
 
 	Host = "host"

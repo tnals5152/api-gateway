@@ -4,6 +4,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/getsentry/sentry-go"
+	"github.com/pkg/errors"
 	constant "tnals5152.com/api-gateway/const"
 )
 
@@ -33,6 +35,7 @@ func (c *CallerInfo) SetLine(line int) *CallerInfo {
 type PathError struct {
 	err        error
 	callerInfo []*CallerInfo
+	Frames     []sentry.Frame
 }
 
 func (e *PathError) Error() string {
@@ -93,11 +96,5 @@ func DeferWrap(err *error, depths ...int) {
 		return
 	}
 
-	depth := DefaultDepth
-
-	if len(depths) != 0 {
-		depth += depths[0]
-	}
-
-	wrapError(err, depth)
+	*err = errors.WithStack(*err)
 }
