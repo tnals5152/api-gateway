@@ -20,6 +20,7 @@ func CreateProxy(c *fiber.Ctx) error {
 	if err := resource.Validate(); err != nil {
 		return c.JSON(err.Error())
 	}
+
 	err := handler.SetProxyData(resource)
 
 	if err != nil {
